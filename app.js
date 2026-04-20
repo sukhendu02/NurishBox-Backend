@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import cors from "cors";
 // import authRoute from "./src/modules/auth/Route/authRoute"
 import authRoute from "./src/modules/auth/Route/authRoute.js";
+import { errorHandler, notFoundHandler } from "./src/middleware/ErrorHandler.js";
 
 const app = express();
 
@@ -15,11 +16,6 @@ app.use(express.json());
 
 
 
-// API VERSIONING
-app.use("/api/v1", (req, res) => {
-  res.status(200).json({ message: "Welcome to the API version 1" });
-  
-});
 
 // ROUTES
 app.use("/api/v1/auth", authRoute);
@@ -28,8 +24,16 @@ app.use("/api/v1/auth", authRoute);
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
+// // API VERSIONING
+// app.use("/api/v1", (req, res) => {
+//   res.status(200).json({ message: "Welcome to the API version 1" });
+  
+// });
 
-// Global Error Handler
-// app.use(errorHandler);
-
+// ── 404 — must be AFTER all routes ───────────────────────────────
+app.use(notFoundHandler);
+ 
+// ── Global error handler — must be LAST ──────────────────────────
+app.use(errorHandler);
+ 
 export default app;
