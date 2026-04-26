@@ -31,6 +31,10 @@ export const User = sequelize.define(
         isEmail: true,
       },
     },
+    isEmailVerified:{
+      type:DataTypes.BOOLEAN,
+      defaultValue:false
+    },
 
    dietary_pref: {
   type: DataTypes.ENUM("veg", "non_veg", "vegan"),
@@ -47,6 +51,11 @@ export const User = sequelize.define(
       allowNull: true,
       // FK (we will connect later)
     },
+
+    isActive: {
+  type:         DataTypes.BOOLEAN,
+  defaultValue: true,
+},
   },
   {
     tableName: "users",

@@ -3,11 +3,12 @@
 import { Router } from "express";
 const router = Router();
 
-import { sendOTP,verifyOTP } from "../Controller/authController.js";
+import { sendOTP,verifyOTP ,registerUser, getrefreshToken ,logout,logoutAll,verifyEmail,checkProtected} from "../Controller/authController.js";
+import  {verifyTempToken}  from "../../../middleware/verifyTemptoken.js";
+import { authenticate } from "../../../middleware/authenticate.js";
 
 
-// Register route
-// router.post('/register', registeruser);
+
 
 // SEND OTP
 router.post('/send-otp',sendOTP);
@@ -15,11 +16,22 @@ router.post('/send-otp',sendOTP);
 // VERIFY OTP
 router.post('/verify-otp', verifyOTP);
 
-// Login route
-// router.post('/login', authController.login);
 
-// SEND OTP route
+// REGISTER USER
+router.post('/register-user',verifyTempToken,registerUser)
 
-// VERIFY OTP route
+// REFRESH TOKEN ROUTE
+router.post("/refresh-token", getrefreshToken);
 
+// LOGOUT
+router.post("/logout",authenticate,logout);
+
+// LOGOUT FORM ALL DEVICES
+router.post("/logout-all",authenticate,logoutAll)
+
+
+// PROTECTED ROUTE
+router.get('/protected',authenticate,checkProtected)
+
+router.post("/verify-email",authenticate,verifyEmail)
 export default router;

@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import { connectDB } from "./src/Config/database.js";
+import { cleanupExpiredTokens } from "./src/utils/cleanupRefreshTokes.js";
 
 const PORT = process.env.PORT || 5000;
 // import cors from "cors";
@@ -20,6 +21,8 @@ const startServer = async () => {
 
   await connectDB();
   
+  cleanupExpiredTokens()
+  setInterval(cleanupExpiredTokens,24*60*60*1000)
    app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

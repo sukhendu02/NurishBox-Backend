@@ -1,10 +1,13 @@
 
 import bcrypt from "bcrypt";
 import {OTP} from "../Models/otp.js";
-import {BadRequestError, NotFoundError} from "../../../middleware/ErrorHandler.js";
+import {BadRequestError, ConflictError, NotFoundError, UnauthorizedError} from "../../../middleware/ErrorHandler.js";
 import e from "express";
+import {User} from "../Models/user.js"
+import { generateAccessToken,generateRefreshToken,generateTempToken, rotateRefreshToken } from "../../../utils/token.js";
+import RefreshToken from "../Models/refreshTokenModel.js";
 
-
+// GENRATE OTP SERVICE
 export const otpService = async(phone)=>{
     // 
     console.log("Received phone number for OTP:", phone);
@@ -60,9 +63,11 @@ export const otpService = async(phone)=>{
   
 }
 
+// VERIFY OTP SERVICE
+export const verifyOTPService = async(phone,otp,meta)=>{
 
-export const verifyOTPService = async(phone,otp)=>{
-    if(!phone || !otp){
+    
+        if(!phone || !otp){
         throw BadRequestError("Phone number and OTP are required for verification");
     }
 
@@ -100,9 +105,132 @@ export const verifyOTPService = async(phone,otp)=>{
     }
     // OTP is valid
 
-      await otpRecord.update({ isUsed: true });
+    await otpRecord.update({ isUsed: true });
 
 
-    return {message: "OTP verified successfully"};
+    // return {message: "OTP verified successfully"};
+    return findOrInitUser(phone,meta);
 
+}
+
+
+// IF USER ALREADY REGISTERED THEN LOGIN OTHERWISE ONBOARDING  PAGE
+const findOrInitUser=async(phone,meta)=>{
+
+    const existingUser = await User.findOne({where:{phone}});
+
+    if(existingUser){
+
+        const accessToken = await generateAccessToken(existingUser);
+        const refreshToken = await generateRefreshToken(existingUser.id,meta)
+        return{
+
+            isNewUser:false,
+            accessToken,
+            refreshToken,
+            user:{
+                id:existingUser.id,
+                name:existingUser.name,
+    
+            },
+            existingUser
+        }
+
+    }
+
+    const tempToken = generateTempToken(phone)
+    return{
+        isNewUser:true,
+        tempToken
+    }
+
+}
+
+// USER REGISTRATIOIN
+export const userRegistrationService = async(phone,{name,email})=>{
+
+
+    if(!name||name.trim().length<2){
+  throw BadRequestError("Full name is required and must be of at least 2 characters")
+}
+
+ // ── 2. Validate email format (optional but if provided must be valid) ──
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw BadRequestError("Invalid email address");
+  }
+
+  if(email){
+    const emailExists=await User.findOne({where:{email}});
+    if(emailExists){
+        throw ConflictError("Email already registerd")
+    }
+  }
+
+  const userExist = await User.findOne({where:{phone}});
+  if(userExist){
+    // login the user 
+    throw BadRequestError("User already Present. Please login.")
+  }
+
+  const newUser =await User.create({
+    phone,
+    name:name.trim(),
+    email:email? email.trim().toLowerCase(): null,
+
+    // OPTIONAL
+    isVerified:true, // CAN CHANGE TO EMAIL VERIFIED OR NOT
+    role:"CUSTOMER",
+  })
+
+  return{
+    isNewUser:true,
+    toDo:"Login_Now"
+  }
+}
+
+
+
+
+// REFRESH TOKEN SERVICE
+export const refreshTokenService = async(refreshToken, meta)=>{
+
+    if(!refreshToken) throw BadRequestError("Refresh Token is required");
+    const {userId, newRefreshToken } = await rotateRefreshToken(refreshToken,meta);
+    const user = await User.findByPk(userId);
+    if(!user) throw UnauthorizedError("User not found");
+    if(!user.isActive) throw UnauthorizedError("Account deactivated");
+    
+    const accessToken = generateAccessToken(user);
+    return{
+        accessToken,
+        refreshToken:newRefreshToken,
+    };
+};
+
+export const logoutService=async(refreshToken) =>{
+    if(!refreshToken) throw BadRequestError("Refresh token is required");
+
+    const existing = await RefreshToken.findOne({where:{token:refreshToken}});
+    if(!existing) throw BadRequestError("Invalid refresh token");
+
+    await existing.update({isRevoked:true});
+    return{
+        message:"Logged out successfully",
+    }
+}
+
+
+export const logoutAllService = async (userId)=>{
+    await RefreshToken.update(
+        {isRevoked:true},
+        {where:{userId}}
+    );
+    return {
+        message:"Logged out from all devices"
+    }
+}
+
+export const verifyEmailService = async (email)=>{
+    // verify email using link or otp
+    // Not so important we can do this later
 }
