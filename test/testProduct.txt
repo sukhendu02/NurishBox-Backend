@@ -1,0 +1,8 @@
+59e92a07-d909-4790-81d4-147c621002f1	Grilled Chicken Power Bowl	grilled-chicken-power-bowl	Lean grilled chicken with brown rice and lemon garlic dressing	LUNCH	https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400
+da26a72e-b5c7-4e75-b569-0a068e7ca0c8	Paneer Quinoa Bowl	paneer-quinoa-bowl	Protein rich paneer with fluffy quinoa and mint chutney	LUNCH	https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400
+fa59c090-82a7-4144-baa1-a05f9fefbf8e	Berry Overnight Oats	berry-overnight-oats	Creamy overnight oats with fresh berries and chia seeds	BREAKFAST	https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400
+5adf5394-cd40-48ec-ae3d-9840dafe7617	Masala Egg White Omelette	masala-egg-white-omelette	Fluffy egg white omelette with bell peppers and spices	BREAKFAST	https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400
+ddee2cbc-21ea-4f20-b871-c34ec042d42f	Tandoori Chicken Wrap	tandoori-chicken-wrap	Smoky tandoori chicken in whole wheat roti with fresh veggies	DINNER	https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400
+3e29146b-379b-4eed-ba8f-5fdd0e0a4586	Dal Makhani with Brown Rice	dal-makhani-brown-rice	Slow cooked black lentils in rich tomato base with brown rice	DINNER	https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400
+5f178f61-d5a5-4253-a72c-3a8fcc5ee177	Mango Chia Smoothie	mango-chia-smoothie	Fresh mango with chia seeds coconut milk and turmeric	DRINK	https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=400
+b0cc1c5e-4ef8-47ca-a585-54c5c8f419b6	Unavailable Test Meal	unavailable-test-meal	This meal is unavailable for testing cart validation	SNACK	(null)

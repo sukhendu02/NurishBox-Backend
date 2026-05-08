@@ -6,11 +6,12 @@ import e from "express";
 import {User} from "../Models/user.js"
 import { generateAccessToken,generateRefreshToken,generateTempToken, rotateRefreshToken } from "../../../utils/token.js";
 import RefreshToken from "../Models/refreshTokenModel.js";
+import { mergerCartService } from "../../cart/service/cartService.js";
 
 // GENRATE OTP SERVICE
 export const otpService = async(phone)=>{
     // 
-    console.log("Received phone number for OTP:", phone);
+    // console.log("Received phone number for OTP:", phone);
     if(!phone){
         throw BadRequestError("Phone number is required to send OTP");
     } 
@@ -20,10 +21,7 @@ export const otpService = async(phone)=>{
         throw BadRequestError("Invalid phone number format");
     }
 
-    // Check if user with this phone number exists in the system
-    // For this example, we will assume that any phone number is valid and can receive an OTP
-    // In production, you should check against your user database to ensure the phone number is registered
-
+  
     // Resend otp after 1 minute if user requests again
     const lastOTP = await OTP.findOne({where:{phone},
          order: [["created_at", "DESC"]]
@@ -64,7 +62,7 @@ export const otpService = async(phone)=>{
 }
 
 // VERIFY OTP SERVICE
-export const verifyOTPService = async(phone,otp,meta)=>{
+export const verifyOTPService = async(phone,otp,meta,sessionId)=>{
 
     
         if(!phone || !otp){
@@ -109,20 +107,24 @@ export const verifyOTPService = async(phone,otp,meta)=>{
 
 
     // return {message: "OTP verified successfully"};
-    return findOrInitUser(phone,meta);
+    return findOrInitUser(phone,meta,sessionId);
 
 }
 
 
 // IF USER ALREADY REGISTERED THEN LOGIN OTHERWISE ONBOARDING  PAGE
-const findOrInitUser=async(phone,meta)=>{
+const findOrInitUser=async(phone,meta,sessionId)=>{
 
     const existingUser = await User.findOne({where:{phone}});
 
     if(existingUser){
 
+
+
         const accessToken = await generateAccessToken(existingUser);
         const refreshToken = await generateRefreshToken(existingUser.id,meta)
+
+        await mergerCartService(existingUser.id,sessionId);
         return{
 
             isNewUser:false,
@@ -131,9 +133,12 @@ const findOrInitUser=async(phone,meta)=>{
             user:{
                 id:existingUser.id,
                 name:existingUser.name,
+                phone:existingUser.phone,
+                email:existingUser.email,
+                role:existingUser.role,
+                meta:existingUser.meta
     
             },
-            existingUser
         }
 
     }
@@ -147,7 +152,7 @@ const findOrInitUser=async(phone,meta)=>{
 }
 
 // USER REGISTRATIOIN
-export const userRegistrationService = async(phone,{name,email})=>{
+export const userRegistrationService = async(phone,{name,email},meta,sessionId)=>{
 
 
     if(!name||name.trim().length<2){
@@ -182,10 +187,27 @@ export const userRegistrationService = async(phone,{name,email})=>{
     role:"CUSTOMER",
   })
 
-  return{
-    isNewUser:true,
-    toDo:"Login_Now"
-  }
+ // ── 6. Merge guest cart if any ────────────────────────────────
+  await mergerCartService(newUser.id, sessionId);
+
+  // ── 7. Generate tokens — login immediately ────────────────────
+  const refreshToken =await generateRefreshToken(newUser.id, meta);
+  const accessToken = generateAccessToken(newUser);
+
+
+  // ── 8. Return user + tokens ───────────────────────────────────
+  return {
+    isNewUser:    true,
+    accessToken,
+    refreshToken,
+    user: {
+      id:    newUser.id,
+      name:  newUser.name,
+      phone: newUser.phone,
+      email: newUser.email,
+      role:  newUser.role,
+    },
+  };
 }
 
 
@@ -209,11 +231,13 @@ export const refreshTokenService = async(refreshToken, meta)=>{
 
 export const logoutService=async(refreshToken) =>{
     if(!refreshToken) throw BadRequestError("Refresh token is required");
-
+    console.log(refreshToken)
     const existing = await RefreshToken.findOne({where:{token:refreshToken}});
     if(!existing) throw BadRequestError("Invalid refresh token");
 
     await existing.update({isRevoked:true});
+
+    //  console.log(`Refresh token ${refreshToken} revoked successfully`);
     return{
         message:"Logged out successfully",
     }
@@ -221,10 +245,12 @@ export const logoutService=async(refreshToken) =>{
 
 
 export const logoutAllService = async (userId)=>{
+
     await RefreshToken.update(
         {isRevoked:true},
         {where:{userId}}
     );
+  
     return {
         message:"Logged out from all devices"
     }

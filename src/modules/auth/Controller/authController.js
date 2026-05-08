@@ -26,6 +26,9 @@ export const sendOTP = async(req,res)=>{
 
 export const verifyOTP = async(req,res)=>{
   const {phone,otp} = req.body;
+
+  const sessionId= req.sessionId; 
+
   if(!phone || !otp){
     throw BadRequestError("Phone number and OTP are required for verification");
   }
@@ -33,7 +36,7 @@ export const verifyOTP = async(req,res)=>{
     ipAddress: req.ip,
     userAgent: req.headers["user-agent"],
   };
-  const result = await verifyOTPService(phone,otp,meta);
+  const result = await verifyOTPService(phone,otp,meta,sessionId);
   res.status(200).json({
     success: true,
     message: "OTP verified successfully",
@@ -47,7 +50,8 @@ export const registerUser = async(req,res)=>{
   const phone=req.phone;
 
   const {name,email}=req.body
-  const result = await userRegistrationService(phone,{name,email});
+  const sessionId= req.sessionId;
+  const result = await userRegistrationService(phone,{name,email},getMeta(req), sessionId);
   
    res.status(201).json({
     success: true,
@@ -70,7 +74,10 @@ export const getrefreshToken =async(req,res)=>{
 
 export const logout = async(req,res)=>{
   const {refreshToken} = req.body;
+  
   const result =await logoutService(refreshToken);
+   // Clear session cookie so guest cart starts fresh
+  res.clearCookie("sessionId");
   res.status(200).json({
     success:true,
     ...result
@@ -78,6 +85,8 @@ export const logout = async(req,res)=>{
 }
 export const logoutAll = async(req,res)=>{
   const result = await logoutAllService(req.user.id);
+   // Clear session cookie so guest cart starts fresh
+  res.clearCookie("sessionId");
   res.status(200).json({
     success:true,
     ...result
