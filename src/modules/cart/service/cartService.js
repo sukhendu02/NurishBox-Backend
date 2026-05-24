@@ -7,7 +7,7 @@ import { calculateCartTotals } from "../../../utils/cartCalculator.js";
 // HELPER
 export const getOrCreateCart = async({userId,sessionId})=>{
     const where = userId ?{userId}:{sessionId};
-
+    console.log(where)
     let cart = await Cart.findOne({where});
 
     if(!cart) {
@@ -42,7 +42,9 @@ const getCartWithItems = async (cartId) => {
 // GET CART
 
 export const  getCartService = async ({userId,sessionId})=>{
-    const where = userId?{userId} : {sessionId};
+  console.log("userId", userId) 
+  console.log("sessionId", sessionId) 
+  const where = userId?{userId} : {sessionId};
 
     console.log(where)
     const cart = await Cart.findOne({
@@ -191,6 +193,7 @@ export const mergerCartService = async(userId,sessionId)=>{
     where:{sessionId},
     include:[{model:CartItem,as:"items"}]
   })
+  
 
   if(!guestCart || guestCart.items.length===0) return;
 
@@ -215,12 +218,16 @@ console.log("userCart",userCart)
       });
     }
 
+    console.log("userCart",userCart)
+
   }
 
   const deletedItems= await CartItem.destroy({where:{cartId:guestCart.id}});
 
    console.log("Deleted guest cart items:", deletedItems);
   await guestCart.destroy();
-  
+  return await getCartService({
+  userId
+})
 }
 

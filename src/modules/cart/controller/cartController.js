@@ -8,7 +8,7 @@ const getIdentity = (req) => ({
 
 
 export const getCart = async(req,res)=>{
-   
+   console.log(req.user)
     const result = await getCartService(getIdentity(req));
     res.json({
         success:true,

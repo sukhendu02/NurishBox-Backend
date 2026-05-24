@@ -194,6 +194,7 @@ export const userRegistrationService = async(phone,{name,email},meta,sessionId)=
   const refreshToken =await generateRefreshToken(newUser.id, meta);
   const accessToken = generateAccessToken(newUser);
 
+  console.log(sessionId)
 
   // ── 8. Return user + tokens ───────────────────────────────────
   return {

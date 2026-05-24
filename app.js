@@ -4,6 +4,7 @@ import cors from "cors";
 import authRoute from "./src/modules/auth/Route/authRoute.js";
 import cartRoute from "./src/modules/cart/route/cartRoute.js"
 import productRoute from "./src/modules/products/route/productRoute.js"
+import userRoute from "./src/modules/user/route/userRoute.js"
 import { errorHandler, notFoundHandler } from "./src/middleware/ErrorHandler.js";
 import { sessionMiddleware } from "./src/middleware/sessionMiddleware.js";
 import cookieParser from "cookie-parser";
@@ -34,6 +35,7 @@ app.use(sessionMiddleware);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/cart", cartRoute);
 app.use("/api/v1/menu",productRoute)
+app.use("/api/v1/user",userRoute)
 
 // Health check
 app.get("/health", (req, res) => {

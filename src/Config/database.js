@@ -58,9 +58,9 @@ export async function connectDB() {
 
     // alter: true  → dev (updates columns to match model)
     // alter: false → production (use migrations instead)
-    const alter = env === "development";
-    await sequelize.sync({ alter });
-    console.log(`✅ Tables synced (alter: ${alter})`);
+    // const alter = env === "development";
+    // await sequelize.sync({ alter });
+    // console.log(`✅ Tables synced (alter: ${alter})`);
 
   } catch (err) {
     console.error("❌ DB connection failed:", err.message);

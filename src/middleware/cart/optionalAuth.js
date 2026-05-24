@@ -11,11 +11,13 @@ export const optionalAuth = async (req, res, next) => {
 
     const token   = authHeader.split(" ")[1];
     const decoded = verifyAccessToken(token);
-
-    const session = await RefreshToken.findOne({
-      where: { id: decoded.sessionId, userId: decoded.id, isRevoked: false },
-    });
-    if (!session) return next();
+       if (!decoded?.id) {
+      return next();
+    }
+    // const session = await RefreshToken.findOne({
+    //   where: { id: decoded.sessionId, userId: decoded.id, isRevoked: false },
+    // });
+    // if (!session) return next();
 
     const user = await User.findByPk(decoded.id);
     if (user) req.user = user;
