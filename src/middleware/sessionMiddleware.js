@@ -8,7 +8,8 @@ export const sessionMiddleware = async(req,res,next)=>{
         res.cookie("sessionId",sessionId,{
             httpOnly:true,
             maxAge:30*24*60*60*1000,
-            sameSite:'lax',
+            // sameSite:'lax',
+            sameSite:'none',
             secure: process.env.NODE_ENV==="production"
         })
     }
