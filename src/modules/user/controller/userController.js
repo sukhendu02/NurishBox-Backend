@@ -1,5 +1,7 @@
 
-import { getUserProfileServcie, updateUserProfileService,createUserAddressService,getUserAllAddressesService,getSingleAddressService,updateUserAddressService,deleteUserAddressService,setDefaultAddressService} from "../service/userService.js";
+import { getUserProfileServcie, updateUserProfileService,createUserAddressService,getUserAllAddressesService,getSingleAddressService,updateUserAddressService,
+    deleteUserAddressService,setDefaultAddressService,
+getmyOrderService} from "../service/userService.js";
 export const getUserProfile = async (req, res) => {
 
     const userId = req.user.id;
@@ -82,6 +84,18 @@ export const setDefaultAddress = async(req,res)=>{
         message:"Address set to default",
         data
 
+    })
+}
+
+// ORDERS
+export const getmyOrders = async (req,res)=>{
+    const userId = req.user.id;
+    const allOrders = await getmyOrderService(userId,req.query);
+    res.status(200).json({
+        success:true,
+        data:allOrders.rows,
+        pagination:allOrders.pagination,
+        total:allOrders.total
     })
 }
 

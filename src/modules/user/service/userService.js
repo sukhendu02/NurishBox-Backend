@@ -4,6 +4,9 @@ import Address from "../../../models/address.js"
 import { User } from "../../auth/Models/user.js"
 
 import {sequelize} from "../../../Config/database.js"
+import Order from "../../../models/order.js"
+import OrderItem from "../../../models/orderItem.js"
+import Payment from "../../../models/payment.js"
 
 export const getUserProfileServcie = async(userId)=>{
     const userProfile  = await User.findByPk(userId,
@@ -333,4 +336,64 @@ export const setDefaultAddressService = async (userId, addressId) => {
     if (addressData.receiversName && addressData.receiversName.trim().length < 2) {
     throw BadRequestError('Receiver name must be at least 2 characters')
     }
+}
+
+
+// ORDERS
+
+export const getmyOrderService = async(userId,query={})=>{
+  const { page=1,limit=10} = query;
+
+    const parsedPage = parseInt(page,10);
+    const parsedLimit= parseInt(limit,10);
+
+    const offset = (parsedPage-1)*parsedLimit;
+  const {count,rows} = await Order.findAndCountAll({
+    where:{userId},
+    order: [['createdAt', 'DESC']],
+    limit:parsedLimit,
+    offset,
+     include: [
+    {
+      model: OrderItem,
+      as: 'items',
+      attributes: [
+        'id', 'productId', 'productName', 'productImage',
+        'productCategory', 'quantity', 'unitPrice', 'totalPrice',
+      ],
+    },
+    {
+      model: Payment,
+      as: 'payment',
+      attributes: [
+        'id', 'method', 'status', 'amount', 'currency',
+        'razorpayOrderId', 'razorpayPaymentId', 'paidAt',
+        'failureMessage', 'refundId', 'refundAmt', 'refundedAt',
+      ],
+    },
+    {
+      model: Address,
+      as: 'address',
+      attributes: [
+        'label', 'line1', 'line2', 'landmark',
+        'city', 'state', 'pincode', 'country',
+      ],
+    },
+  ],
+  distinct: true,
+  });
+  return{
+    rows,
+    total:count,
+    pagination:{
+      page:parsedPage,
+      limit:parsedLimit,
+       totalPage : Math.ceil(count/parsedLimit),
+        hasNext:parsedPage<Math.ceil(count/parsedLimit),
+        hasPrev : parsedPage>1,
+    }
+
+
+  }
+  
 }
