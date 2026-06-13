@@ -40,7 +40,7 @@ const Order = sequelize.define(
         'CANCELLED',         // cancelled by user / admin / system
         'REFUNDED'           // refund processed
       ),
-      defaultValue: 'Pending',
+      defaultValue: 'PENDING',
       allowNull:    false,
     },
 
