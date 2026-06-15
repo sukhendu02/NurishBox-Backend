@@ -25,6 +25,7 @@ export const razorpayWebhook = async(req,res)=>{
 
     const signature = req.headers['x-razorpay-signature']
     const rawBody = req.body
+    console.log(rawBody)
     if(!signature){
         return res.status(400).json({
             success:false,
