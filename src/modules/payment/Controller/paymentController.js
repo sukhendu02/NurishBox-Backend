@@ -24,6 +24,7 @@ const {orderId,razorpayOrderId, razorpayPaymentId, razorpaySignature}= req.body
 export const razorpayWebhook = async(req,res)=>{
 
     const signature = req.headers['x-razorpay-signature']
+    const rawBody = req.body
     if(!signature){
         return res.status(400).json({
             success:false,
@@ -31,7 +32,7 @@ export const razorpayWebhook = async(req,res)=>{
         })
     }
 
-    const result = await handleWebhookService(req.rawBody,signature)
+    const result = await handleWebhookService(rawBody,signature)
     res.status(200).json(result)
 
 }

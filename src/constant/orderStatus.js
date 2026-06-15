@@ -1,0 +1,11 @@
+export const POLL_INTERVAL_MS = 5000
+
+export const STATUS_SEQUENCE = [
+  'PLACED',
+  'CONFIRMED',
+  'PREPARING',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+]
+
+export const TERMINAL_STATUSES = new Set(['DELIVERED', 'CANCELLED', 'FAILED', 'REFUNDED'])

@@ -11,7 +11,7 @@ import { getCart,addToCart, updateCartItem, removeItem,clearCart } from "../cont
 router.get('/',optionalAuth,getCart)
 
 router.post("/",optionalAuth, addToCart);
-router.patch("/:itemId",     optionalAuth, updateCartItem);
+router.patch("/:itemId",optionalAuth, updateCartItem);
 router.delete("/:itemId",optionalAuth, removeItem);
 router.delete("/",optionalAuth, clearCart);
 

@@ -10,11 +10,13 @@ import { generateOrderId } from "../../../utils/generateOrderId.js"
 import OrderItem from "../../../models/orderItem.js";
 import Payment from "../../../models/payment.js";
 import { razorpay } from "../../../Config/razorpay.js";
+
+
+import {TERMINAL_STATUSES, POLL_INTERVAL_MS,STATUS_SEQUENCE} from "../../../constant/orderStatus.js"
 // import {fetchFullOrder} from "../../payment/Service/paymentService.js"
 
 // export const placeOrderService = async(userId,{addressId=null,specialInstr,idempotencyKey})=>{
     
-
 //     if(idempotencyKey){
 //         const existing = await Order.findOne({
 //             where:{
@@ -519,4 +521,89 @@ return {
 }
     
 }
+
+export const getOrderDetailsService = async(userId,{orderId})=>{
+      const order = await Order.findOne({
+        where:{id:orderId,userId},
+              include:[
+              {
+              model:OrderItem,
+              as:'items',
+              attributes:[
+                  'id', 'productId', 'productName', 'productImage',
+            'productCategory', 'quantity', 'unitPrice', 'totalPrice',
+              ]
+          },
+        {
+          model:      Payment,
+          as:         'payment',
+          attributes: [
+            'id', 'method', 'status', 'amount', 'currency',
+            'razorpayOrderId', 'razorpayPaymentId', 'paidAt',
+            'failureMessage', 'refundId', 'refundAmt', 'refundedAt',
+          ],
+        },
+      {
+          model:Address,
+          as:'address',
+          attributes:[
+                'label', 'line1', 'line2', 'landmark',
+            'city', 'state', 'pincode', 'country',
+          ]
+      },
+  ],
+
+      })
+
+      if(!order) throw NotFoundError("Order")
+        return order;
+}
+
+
+export const verifyOrderOwnership = async (orderId, userId) => {
+  const order = await Order.findOne({ where: { id: orderId, userId } })
+  return order ?? null
+}
+
+export const trackOrderService= async(userId, orderId ,onStatusChange, onError)=>{
+ 
+   let lastStatus = null
+
+  const interval = setInterval(async () => {
+    try {
+      const order = await Order.findOne({
+        where: { id: orderId, userId },
+        attributes: ['status'],
+      })
+
+      if (!order) {
+        clearInterval(interval)
+        onError(new Error('Order not found'))
+        return
+      }
+
+      if (order.status !== lastStatus) {
+        lastStatus = order.status
+        onStatusChange({
+          orderId,
+          status: order.status,
+          isFinal: TERMINAL_STATUSES.has(order.status),
+        })
+
+        if (TERMINAL_STATUSES.has(order.status)) {
+          clearInterval(interval)
+        }
+      }
+    } catch (err) {
+      clearInterval(interval)
+      onError(err)
+    }
+  }, POLL_INTERVAL_MS)
+
+  return () => clearInterval(interval) // cleanup fn
+}
+
+export const isTerminal = (status) => TERMINAL_STATUSES.has(status)
+
+
 
