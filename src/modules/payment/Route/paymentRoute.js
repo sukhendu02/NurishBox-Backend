@@ -1,5 +1,5 @@
 
-
+import express from "express"
 import { Router } from "express";
 import { authenticate } from "../../../middleware/authenticate.js";
 const router = Router();
