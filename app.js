@@ -10,6 +10,7 @@ import paymentRoute from "./src/modules/payment/Route/paymentRoute.js"
 import { errorHandler, notFoundHandler } from "./src/middleware/ErrorHandler.js";
 import { sessionMiddleware } from "./src/middleware/sessionMiddleware.js";
 import cookieParser from "cookie-parser";
+import webhookRoute from "./src/modules/payment/Route/webhookRoute.js"
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization","x-idempotency-key"],
   }));
+
+
+app.use("/api/v1/webhook",webhookRoute)
 
 // Body parser
 app.use(express.json());
