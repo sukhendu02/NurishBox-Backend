@@ -141,6 +141,7 @@ const Product = sequelize.define("Product", {
 
 Product.associate = (models) => {
   Product.hasMany(models.CartItem, { foreignKey: "productId", as: "cartItems" });
+    Product.hasMany(models.KitchenInventory, { foreignKey: "productId", as: "inventory" }); 
 };
 
 export default Product;

@@ -7,6 +7,7 @@ import {sequelize} from "../../../Config/database.js"
 import Order from "../../../models/order.js"
 import OrderItem from "../../../models/orderItem.js"
 import Payment from "../../../models/payment.js"
+import {assignKitchentoAddress} from "../../../utils/kitchen/assignKitchen.js"
 
 export const getUserProfileServcie = async(userId)=>{
     const userProfile  = await User.findByPk(userId,
@@ -65,36 +66,39 @@ export const updateUserProfileService = async (userId,{name,email})=>{
     }
 }
 
-
+// ADD NEW ADDRESSS
 export const createUserAddressService = async (userId, addressData) => {
     validateAddressData(addressData);
     console.log("addresss is verified")
 
-    
-// COUNT ADDRESS
+
+    // COUNT ADDRESS
     const addressCount = await Address.count({ where: { userId } })
     if(addressCount>=20){
-        throw BadRequestError("Address limit reached. You can only have up to 20 addresses.")
+      throw BadRequestError("Address limit reached. You can only have up to 20 addresses.")
     }
-   const isFirstAddress = addressCount === 0;
-   const shouldBeDefault = isFirstAddress || addressData.isDefault === true
 
-
-// IF NEW ADDRESS IS DEFAULT, UNSET PREVIOUS DEFAULT
+    const isFirstAddress = addressCount === 0;
+    const shouldBeDefault = isFirstAddress || addressData.isDefault === true
+    
+    
+    // IF NEW ADDRESS IS DEFAULT, UNSET PREVIOUS DEFAULT
     return sequelize.transaction(async (t) => {
-    // Remove existing default if setting new one
-    if (shouldBeDefault) {
-      await Address.update(
-        { isDefault: false },
-        { where: { userId }, transaction: t }
-      )
-    }
 
-const newAddress = await Address.create({
-    userId,
-    label: addressData.label,
-    customLabel: addressData.label === 'OTHER' ? addressData.customLabel : null,
-    line1: addressData.line1.trim(),
+      // Remove existing default if setting new one
+      if (shouldBeDefault) {
+        await Address.update(
+          { isDefault: false },
+          { where: { userId }, transaction: t }
+        )
+      }
+
+      
+      const newAddress = await Address.create({
+        userId,
+        label: addressData.label,
+        customLabel: addressData.label === 'OTHER' ? addressData.customLabel : null,
+        line1: addressData.line1.trim(),
     line2: addressData.line2?.trim() || null,
     landmark: addressData.landmark?.trim() || null,
     city: addressData.city.trim(),
@@ -104,19 +108,25 @@ const newAddress = await Address.create({
     latitude: addressData.latitude || null,
     longitude: addressData.longitude || null,
     isDefault: shouldBeDefault,
-   
+    
     receiversName: addressData.receiversName?.trim(),
     receiversPhone: addressData.receiversPhone?.trim() ,
-
-},
-{ transaction: t }
+    
+  },
+  { transaction: t }
 )
+
+
+await assignKitchentoAddress(newAddress.id,newAddress.latitude,newAddress.longitude,t)
+
+
 
 return newAddress;
 })
  
 }
 
+// GET ALL THE ADDRESS OF THE USER
 export const getUserAllAddressesService = async(userId)=>{
 
     const allAddresses = await Address.findAll({
@@ -142,6 +152,7 @@ export const getUserAllAddressesService = async(userId)=>{
     }
 }
 
+// GET THE ADDRESS (SINGLE USING ID)
 export const getSingleAddressService = async(userId,addressId)=>{
     const address = await Address.findOne({
         where: { userId, id: addressId },
@@ -160,6 +171,7 @@ export const getSingleAddressService = async(userId,addressId)=>{
     return address;
 }
 
+// UPDATE THE USER ADDRESS USING PATCH
 export const updateUserAddressService = async(userId, addressId, updatedData)=>{
   if(!updatedData){
     throw BadRequestError("Please provide at least one data to update")
@@ -229,11 +241,30 @@ export const updateUserAddressService = async(userId, addressId, updatedData)=>{
     updates.longitude = updatedData.longitude
   }
 
-  await address.update(updates)
-  return address;
+  // await address.update(updates)
+  // return address;
+
+  return sequelize.transaction(async (t) => {
+  await address.update(updates, { transaction: t })
+
+  // Re-run kitchen mapping only if coordinates changed
+  const latChanged = updatedData.latitude  !== undefined
+  const lngChanged = updatedData.longitude !== undefined
+
+  if (latChanged || lngChanged) {
+    const lat = updates.latitude  ?? address.latitude
+    const lng = updates.longitude ?? address.longitude
+
+    await assignKitchentoAddress(addressId, lat, lng, t)
+  }
+
+  await address.reload({ transaction: t })
+  return address
+})
 
 }
 
+// DELETE THE USER ADDRESS
 export const deleteUserAddressService = async(userId,addressId)=>{
   const address = await Address.findOne({
     where:{userId,id:addressId}

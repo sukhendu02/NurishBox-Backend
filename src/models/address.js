@@ -21,7 +21,7 @@ const Address = sequelize.define(
     },
     receiversPhone: {
       type: DataTypes.STRING,
-      unique: true,
+
       validate: {
         isNumeric: true,
         len: [10, 15],
@@ -84,6 +84,18 @@ const Address = sequelize.define(
     isDefault: {
       type:         DataTypes.BOOLEAN,
       defaultValue: false,
+    },
+
+      // ── Kitchen mapping ───────────────────────────────────────────
+    kitchenId: {
+      type:      DataTypes.UUID,
+      allowNull: true, // null until mapped after creation
+      references: {
+        model: 'kitchens',
+        key:   'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL', // if kitchen is deleted, don't lose the address
     },
   },
   {

@@ -24,7 +24,7 @@ export const sequelize = new Sequelize(dbConfig.url, {
 // ── Auto-load all models from src/models/ ─────────────────────────
 async function loadModels() {
   const __dirname  = path.dirname(fileURLToPath(import.meta.url));
-  const modelsPath = path.join(__dirname, "../modules/auth/Models");
+  const modelsPath = path.join(__dirname, "../models");
 
   const { default: fs } = await import("fs");
 
