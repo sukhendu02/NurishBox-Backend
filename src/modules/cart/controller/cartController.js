@@ -1,5 +1,6 @@
 import { BadRequestError } from "../../../middleware/ErrorHandler.js";
-import { getCartService,addToCartService, updateCartItemsService, removeItemfromCart, clearCartService } from "../service/cartService.js";
+import { calculateEta } from "../../../utils/distanceCalc.js";
+import { getCartService,addToCartService, updateCartItemsService, removeItemfromCart, clearCartService, checkItemAvailabilityService,calculateEtaService } from "../service/cartService.js";
 
 const getIdentity = (req) => ({
   userId:    req.user?.id || null,
@@ -10,6 +11,7 @@ const getIdentity = (req) => ({
 export const getCart = async(req,res)=>{
    console.log(req.user)
     const result = await getCartService(getIdentity(req));
+    
     res.json({
         success:true,
         data:result
@@ -58,4 +60,30 @@ export const clearCart = async(req,res)=>{
         success:true,
         data:result
     })
+}
+
+// CONTROLLER FOR CHECK ITEM AVAILIABLITY
+export const checkItemAvailability = async(req,res)=>{
+
+    const {kitchenId,items,selectedAddress} = req.body;
+  
+    console.log("get selected aDdress", selectedAddress)
+    if(!kitchenId){
+        return res.status(200).json({
+        success:     true,
+        available:   [],
+        unavailable: items.map(i => ({ productId: i.productId, reason: 'no_kitchen' })),
+      })
+    }
+
+    const {available,unavailable} = await checkItemAvailabilityService(kitchenId,items);
+    const eta = await calculateEtaService(kitchenId,selectedAddress)
+    
+    console.log(eta)
+    return res.status(200).json({
+        success:true,
+        available,
+        unavailable,
+        eta
+    })    
 }

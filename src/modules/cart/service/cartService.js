@@ -1,9 +1,12 @@
-import { where } from "sequelize";
+import { Op, where } from "sequelize";
 import { BadRequestError, NotFoundError } from "../../../middleware/ErrorHandler.js";
 import Cart from "../../../models/cart.js";
 import CartItem from "../../../models/cartItems.js";
 import Product from "../../../models/product.js";
 import { calculateCartTotals } from "../../../utils/cartCalculator.js";
+import KitchenInventory from "../../../models/kitchenInventory.js"
+import Kitchen from "../../../models/kitchen.js"
+import { calculateEta } from "../../../utils/distanceCalc.js";
 // HELPER
 export const getOrCreateCart = async({userId,sessionId})=>{
     const where = userId ?{userId}:{sessionId};
@@ -231,3 +234,54 @@ console.log("userCart",userCart)
 })
 }
 
+
+export const checkItemAvailabilityService = async(kitchenId,items)=>{
+  console.log(kitchenId,items)
+      const productIds = items.map(i => i.productId)
+  const inventory = await KitchenInventory.findAll({
+      where: {
+        kitchenId,
+        productId: { [Op.in]: productIds },
+      },
+      attributes: ['productId', 'quantity', 'isAvailable'],
+    })
+
+      const inventoryMap = {}
+    inventory.forEach(inv => {
+      inventoryMap[inv.productId] = inv
+    })
+
+       const available   = []
+    const unavailable = []
+
+       items.forEach(({ productId, quantity }) => {
+      const inv = inventoryMap[productId]
+ 
+      if (!inv) {
+        unavailable.push({ productId, reason: 'not_in_kitchen' })
+      } else if (!inv.isAvailable) {
+        unavailable.push({ productId, reason: 'not_available' })
+      } else if (inv.quantity === 0) {
+        unavailable.push({ productId, reason: 'out_of_stock' })
+      } else {
+        available.push({ productId, quantity, availableQty: inv.quantity })
+      }
+    })
+    
+    return{
+      available,
+      unavailable
+    }
+}
+
+export const calculateEtaService = async(kitchenId,selectedAddress)=>{
+  const KitchenLatLong = await Kitchen.findByPk(kitchenId,
+    {
+      attributes:['latitude','longitude']
+    }
+  );
+
+  
+  const EtaCalcualtion= calculateEta(KitchenLatLong.latitude,KitchenLatLong.longitude,selectedAddress.latitude,selectedAddress.longitude);
+  return EtaCalcualtion.etaMinutes;
+}

@@ -9,8 +9,8 @@ export const sessionMiddleware = async(req,res,next)=>{
             httpOnly:true,
             maxAge:30*24*60*60*1000,
             // sameSite:'lax',
-            sameSite:'none',
-            secure: process.env.NODE_ENV==="production"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production",
         })
     }
 

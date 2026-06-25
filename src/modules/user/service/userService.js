@@ -141,7 +141,7 @@ export const getUserAllAddressesService = async(userId)=>{
       'line1', 'line2', 'landmark',
       'city', 'state', 'pincode', 'country',
       'latitude', 'longitude',
-      'isDefault', 'createdAt',
+      'isDefault', 'createdAt','kitchenId'
     ],
     })
     
@@ -162,7 +162,7 @@ export const getSingleAddressService = async(userId,addressId)=>{
         'line1', 'line2', 'landmark',
         'city', 'state', 'pincode', 'country',
         'latitude', 'longitude',
-        'isDefault', 'createdAt',
+        'isDefault', 'createdAt','kitchenId'
     ],
     })
     if(!address){

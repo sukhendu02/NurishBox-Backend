@@ -28,6 +28,7 @@ export const getallItemsService = async(query,context={})=>{
 
    const { kitchen, status, message } = await resolveKitchen(kitchenId, latitude, longitude)
 
+  
    const canOrder = status === 'open'
 //   Build dynamic filters based on query parameters
   const where={
@@ -139,6 +140,7 @@ export const getallItemsService = async(query,context={})=>{
     distinct:true, 
  });
   
+
     return {
       kitchen: kitchen
       ? { id: kitchen.id, name: kitchen.name }
