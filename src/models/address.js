@@ -21,7 +21,6 @@ const Address = sequelize.define(
     },
     receiversPhone: {
       type: DataTypes.STRING,
-
       validate: {
         isNumeric: true,
         len: [10, 15],
