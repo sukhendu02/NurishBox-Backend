@@ -86,7 +86,6 @@ export const createPaymentOrderService = async(userId,orderId)=>{
 export const verifyPaymentService = async(userId,{orderId, razorpayOrderId,razorpayPaymentId,razorpaySignature})=>{
 
 
-    console.log("HI from verify payment service")
     if(!orderId || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature){
         throw BadRequestError("Missing required payment details");
     }
@@ -121,8 +120,8 @@ export const verifyPaymentService = async(userId,{orderId, razorpayOrderId,razor
        
     )
     await Order.update(
-        {status:'CONFIRMED',
-            confirmedAt: new Date(),
+        {status:'PLACED',
+            placedAt: new Date(),
         },
         {where:{id:orderId},transaction:t}
     )
@@ -193,7 +192,7 @@ await sequelize.transaction(async (t) => {
         { transaction: t }
       )
       await Order.update(
-        { status: 'CONFIRMED', confirmedAt: new Date() },
+        { status: 'PLACED', placedAt: new Date() },
         { where: { id: payment.orderId }, transaction: t }
       )
 

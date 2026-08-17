@@ -132,7 +132,7 @@ import { where } from "sequelize";
 //         // couponCode:  couponCode || null,
 //         specialInstr: specialInstr || null,
 //         idempotencyKey: idempotencyKey || null,
-//         confirmedAt: new Date(),
+//         placedAt: new Date(),
 //     },
 //     {transaction:t}
 // )
@@ -352,7 +352,7 @@ const order = await sequelize.transaction(async(t)=>{
         userId,
         addressId,
         orderNumber:orderNum,
-        status:      'CONFIRMED', // COD → confirmed immediately
+        status:      'PLACED', 
         subtotal:    parseFloat(subtotal.toFixed(2)),
         baseDeliveryFee,
         savingsAmt,
@@ -362,7 +362,7 @@ const order = await sequelize.transaction(async(t)=>{
         couponDiscountAmount,
         specialInstr: specialInstructions || null,
         idempotencyKey: idempotencyKey || null,
-        confirmedAt: new Date(),
+        placedAt: new Date(),
     },
     {transaction:t}
 )
@@ -462,7 +462,7 @@ const order = await sequelize.transaction(async(t)=>{
         couponDiscountAmount,
         specialInstr: specialInstructions || null,
         idempotencyKey: idempotencyKey || null,
-        confirmedAt: new Date(),
+        placedAt: new Date(),
     },
     {transaction:t}
 )

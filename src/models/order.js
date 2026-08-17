@@ -92,6 +92,10 @@ couponDiscountAmount: {
     },
 
     // ── Status timestamps ─────────────────────────────────────────
+    placedAt:{
+      type:      DataTypes.DATE,
+      allowNull: true,
+    },
     confirmedAt: {
       type:      DataTypes.DATE,
       allowNull: true,
