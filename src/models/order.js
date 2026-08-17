@@ -33,6 +33,7 @@ const Order = sequelize.define(
     status: {
       type: DataTypes.ENUM(
         'PENDING',           // created, awaiting payment
+        'PLACED',            // order placed
         'CONFIRMED',         // payment done OR COD accepted
         'PREPARING',         // kitchen started
         'OUT_FOR_DELIVERY',  // with delivery partner
