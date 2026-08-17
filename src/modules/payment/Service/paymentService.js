@@ -9,6 +9,7 @@ import crypto from 'crypto'
 import {createHmac} from 'crypto'
 import CartItem from "../../../models/cartItems.js"
 import Cart from "../../../models/cart.js"
+import CouponRedemption from "../../../models/couponRedemption.js"
 // function for fetch full order
 export const fetchFullOrder=(orderId)=>{
     Order.findByPk(orderId,{
@@ -84,6 +85,8 @@ export const createPaymentOrderService = async(userId,orderId)=>{
 }
 export const verifyPaymentService = async(userId,{orderId, razorpayOrderId,razorpayPaymentId,razorpaySignature})=>{
 
+
+    console.log("HI from verify payment service")
     if(!orderId || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature){
         throw BadRequestError("Missing required payment details");
     }
@@ -124,8 +127,27 @@ export const verifyPaymentService = async(userId,{orderId, razorpayOrderId,razor
         {where:{id:orderId},transaction:t}
     )
 
+    console.log(order)
+    if(order.couponId){
+        const existingRedemption = await CouponRedemption.findOne({
+            where:{orderId},
+            transaction:t,
+        })
+
+        if(!existingRedemption){
+            await CouponRedemption.create({
+                couponId:order.couponId,
+                userId,
+                orderId,
+                discountAmount:order.couponDiscountAmount,
+                staus:'ACTIVE',
+            },{transaction:t})
+        }
+        await Cart.update({appliedCouponId:null},{where:{userId},transaction:t})
+    }
+
     const getCart = await Cart.findOne({
-        where:{userId},
+        where:{userId},transaction:t
     })
 await CartItem.destroy({
       where:       { cartId:getCart.id },
@@ -174,6 +196,31 @@ await sequelize.transaction(async (t) => {
         { status: 'CONFIRMED', confirmedAt: new Date() },
         { where: { id: payment.orderId }, transaction: t }
       )
+
+      const order = await Order.findByPk(payment.orderId,{transaction:t})
+        if (order.couponId) {
+      const existingRedemption = await CouponRedemption.findOne({
+        where: { orderId: payment.orderId },
+        transaction: t,
+      })
+
+      if (!existingRedemption) {
+        await CouponRedemption.create({
+          couponId: order.couponId,
+          userId: order.userId,
+          orderId: payment.orderId,
+          discountAmount: order.couponDiscountAmount,
+          status: 'ACTIVE',
+        }, { transaction: t })
+      }
+
+      await Cart.update({ appliedCouponId: null }, { where: { userId: order.userId }, transaction: t })
+    }
+
+    const userCart = await Cart.findOne({ where: { userId: order.userId }, transaction: t })
+    if (userCart) {
+      await CartItem.destroy({ where: { cartId: userCart.id }, transaction: t })
+    }
     })
     }
 

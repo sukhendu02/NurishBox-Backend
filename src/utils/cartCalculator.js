@@ -1,6 +1,8 @@
 // src/utils/cartCalculator.js
 
-export const calculateCartTotals = (items) => {
+import { calculateDeliveryFee } from "./DeliveryFeeCalc.js";
+import { DELIVERY_CONFIG } from "../Config/DeliveryConfig.js";
+export const calculateCartTotals = (items,distance) => {
   let subtotal     = 0;
   let totalSavings = 0;
   let itemCount    = 0;
@@ -39,8 +41,9 @@ export const calculateCartTotals = (items) => {
       hasDiscount: savings > 0,
     };
   });
+ 
 
-  const deliveryFee   = subtotal >= 399 ? 0 : 30;
+  const deliveryFee   = calculateDeliveryFee(subtotal,distance) || 0;
   const totalAmount   = subtotal + deliveryFee;
 
   return {
@@ -50,8 +53,8 @@ export const calculateCartTotals = (items) => {
     totalSavings:   parseFloat(totalSavings.toFixed(2)),
     deliveryFee,
     totalAmount:    parseFloat(totalAmount.toFixed(2)),
-    freeDeliveryIn: subtotal < 399
-      ? parseFloat((399 - subtotal).toFixed(2))
+    freeDeliveryIn: subtotal < DELIVERY_CONFIG.FREE_ORDER_AMOUNT
+      ? parseFloat((DELIVERY_CONFIG.FREE_ORDER_AMOUNT - subtotal).toFixed(2))
       : 0,
   };
 };

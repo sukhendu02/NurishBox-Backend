@@ -7,6 +7,8 @@ import { calculateCartTotals } from "../../../utils/cartCalculator.js";
 import KitchenInventory from "../../../models/kitchenInventory.js"
 import Kitchen from "../../../models/kitchen.js"
 import { calculateEta } from "../../../utils/distanceCalc.js";
+import { DELIVERY_CONFIG } from "../../../Config/DeliveryConfig.js";
+import { applyCouponToCartSummary } from "../../coupon/service/couponService.js";
 // HELPER
 export const getOrCreateCart = async({userId,sessionId})=>{
     const where = userId ?{userId}:{sessionId};
@@ -26,7 +28,7 @@ export const getOrCreateCart = async({userId,sessionId})=>{
 
 // HELPER 
 // ── Helper — get cart with all items ─────────────────────────────
-const getCartWithItems = async (cartId) => {
+export const getCartWithItems = async (cartId) => {
   return Cart.findByPk(cartId, {
     include: [{
       model:   CartItem,
@@ -71,12 +73,101 @@ export const  getCartService = async ({userId,sessionId})=>{
       totalSavings:   0,
       deliveryFee:    30,
       totalAmount:    0,
-    //   freeDeliveryIn: 399,
+      freeDeliveryIn:DELIVERY_CONFIG.FREE_ORDER_AMOUNT,
         }
 
     }
 
     return calculateCartTotals(cart.items);
+}
+
+// NEW COMBINED 2
+export const  getCartService2 = async ({userId,sessionId},selectedAddress)=>{
+  
+const kitchenId = selectedAddress?.kitchenId ?? null
+  const where = userId?{userId} : {sessionId};
+console.log(where)
+    const cart = await Cart.findOne({
+        where,
+       include: [{
+      model:   CartItem,
+      as:      "items",
+      include: [{ model: Product, as: "product",
+        attributes: ["id", "name", "imageUrl", "basePrice", "discountPrice", "isAvailable"],
+      }],
+    }],
+    })
+    console.log(cart)
+
+
+    // IF NO CART FOUNC 
+    if(!cart || cart.items.length===0){
+        return{
+            items:[],
+            itemCount:      0,
+      subtotal:       0,
+      totalSavings:   0,
+      deliveryFee:    0,
+      totalAmount:    0,
+      freeDeliveryIn:DELIVERY_CONFIG.FREE_ORDER_AMOUNT,
+      // new add
+      unavailableItems : [],
+      eta:             null,
+      etaDistance:null,
+      coupon:null,
+        }
+
+    }
+
+    if (!kitchenId) {
+  const cartSummary = calculateCartTotals(cart.items, 0);
+
+  return {
+    ...cartSummary,
+unavailableItems: cart.items.map(item => item.product.id),
+// unavailableItems: [],
+    eta: null,
+  };
+}
+
+
+
+     const etaData = await calculateEtaService2(kitchenId,selectedAddress);
+     console.log("eta data",etaData.distanceKm,etaData.etaMinutes)
+
+
+const { available, unavailable } = await checkItemAvailabilityService(
+  kitchenId,
+  cart.items.map(item => ({ productId: item.product.id, quantity: item.quantity }))
+)
+
+  const cartSummary= calculateCartTotals(cart.items,etaData.distanceKm);
+    console.log("Cart Summary:", cartSummary);
+   const kitchen = await Kitchen.findByPk(kitchenId)
+  if(!kitchen){
+    return{
+       ...cartSummary,
+       unavailableItems : unavailable.map(u => u.productId) ,
+       eta:etaData.etaMinutes,
+       etaDistance:etaData.distanceKm,
+    }
+  }
+
+  // COUPON CODE CHECK
+ const {appliedCoupon, couponDiscount, deliveryFee} = await applyCouponToCartSummary(userId,cart.appliedCouponId,cartSummary,kitchenId)
+
+
+  return {
+    ...cartSummary,
+    eta: etaData.etaMinutes,
+    etaDistance:etaData.distanceKm,
+    unavailableItems : unavailable.map(u => u.productId),
+   deliveryFee,
+    totalAmount: cartSummary.subtotal + deliveryFee - couponDiscount,
+    appliedCoupon,
+    couponDiscount,
+  };
+       
 }
 
 export const addToCartService = async({userId,sessionId},productId,quantity=1)=>{
@@ -167,7 +258,7 @@ export const removeItemfromCart = async ({userId,sessionId},itemId)=>{
     totalSavings:0,
     deliveryFee:0,
     totalAmount:0,
-    freedeliveryIn:199,
+    freedeliveryIn:DELIVERY_CONFIG.FREE_ORDER_AMOUNT,
   }
 }
 
@@ -236,6 +327,9 @@ console.log("userCart",userCart)
 
 
 export const checkItemAvailabilityService = async(kitchenId,items)=>{
+
+      
+     console.log("checkCartAvailability called");
   console.log(kitchenId,items)
       const productIds = items.map(i => i.productId)
   const inventory = await KitchenInventory.findAll({
@@ -284,4 +378,18 @@ export const calculateEtaService = async(kitchenId,selectedAddress)=>{
   
   const EtaCalcualtion= calculateEta(KitchenLatLong.latitude,KitchenLatLong.longitude,selectedAddress.latitude,selectedAddress.longitude);
   return EtaCalcualtion.etaMinutes;
+}
+export const calculateEtaService2 = async(kitchenId,selectedAddress)=>{
+  const KitchenLatLong = await Kitchen.findByPk(kitchenId,
+    {
+      attributes:['latitude','longitude']
+    }
+  );
+
+  const {distanceKm,etaMinutes}= calculateEta(KitchenLatLong.latitude,KitchenLatLong.longitude,selectedAddress.latitude,selectedAddress.longitude);
+  return {
+    distanceKm,etaMinutes
+  }
+
+  
 }

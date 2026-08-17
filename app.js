@@ -7,6 +7,7 @@ import productRoute from "./src/modules/products/route/productRoute.js"
 import userRoute from "./src/modules/user/route/userRoute.js"
 import orderRoute from "./src/modules/order/Routes/orderRoute.js"
 import paymentRoute from "./src/modules/payment/Route/paymentRoute.js"
+import couponRoute from "./src/modules/coupon/route/couponRoutes.js"
 import { errorHandler, notFoundHandler } from "./src/middleware/ErrorHandler.js";
 import { sessionMiddleware } from "./src/middleware/sessionMiddleware.js";
 import cookieParser from "cookie-parser";
@@ -44,6 +45,7 @@ app.use("/api/v1/menu",productRoute)
 app.use("/api/v1/user",userRoute)
 app.use("/api/v1/order",orderRoute)
 app.use("/api/v1/payment",paymentRoute)
+app.use("/api/v1/coupon",couponRoute)
 
 // Health check
 app.get("/health", (req, res) => {

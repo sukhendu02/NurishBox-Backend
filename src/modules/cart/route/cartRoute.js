@@ -5,10 +5,10 @@ const router = Router();
 
 import { authenticate } from "../../../middleware/authenticate.js";
 import { optionalAuth } from "../../../middleware/cart/optionalAuth.js";
-import { getCart,addToCart, updateCartItem, removeItem,clearCart,checkItemAvailability } from "../controller/cartController.js";
+import { getCart,getCart2,addToCart, updateCartItem, removeItem,clearCart,checkItemAvailability } from "../controller/cartController.js";
 
 
-router.get('/',optionalAuth,getCart)
+router.get('/',optionalAuth,getCart2)
 
 router.post("/",optionalAuth, addToCart);
 router.patch("/:itemId",optionalAuth, updateCartItem);

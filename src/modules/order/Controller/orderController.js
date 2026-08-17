@@ -10,8 +10,9 @@ export const placeOrder = async(req,res)=>{
     const userId =req.user.id;   
     const idempotencyKey=  req.headers["x-idempotency-key"]
     const paymentMethod=req.body.paymentMethod
+    const specialInstructions = req.body.specialInstructions || null;
     
-    const order = await payandplaceOrderService(userId,{addressId,specialInstr,idempotencyKey,paymentMethod});
+    const order = await payandplaceOrderService(userId,{addressId,idempotencyKey,paymentMethod,specialInstructions});
     res.status(201).json({
         success:true,
         data:order

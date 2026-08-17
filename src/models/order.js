@@ -74,6 +74,15 @@ const Order = sequelize.define(
       type:      DataTypes.STRING,
       allowNull: true,
     },
+    couponId: {
+  type: DataTypes.UUID,
+  allowNull: true,
+},
+couponDiscountAmount: {
+  type: DataTypes.DECIMAL(10, 2),
+  allowNull: false,
+  defaultValue: 0,
+},
 
     // ── Notes ─────────────────────────────────────────────────────
     specialInstr: {
@@ -135,6 +144,7 @@ const Order = sequelize.define(
 Order.associate = (models) => {
   Order.belongsTo(models.User,    { foreignKey: 'userId',    as: 'user'    })
   Order.belongsTo(models.Address, { foreignKey: 'addressId', as: 'address' })
+  Order.belongsTo(models.Coupon, { foreignKey: 'couponId', as: 'coupon' })
   Order.hasMany(models.OrderItem, { foreignKey: 'orderId',   as: 'items',  onDelete: 'CASCADE' })
   Order.hasOne(models.Payment,    { foreignKey: 'orderId',   as: 'payment' })
 }

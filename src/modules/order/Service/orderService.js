@@ -10,9 +10,16 @@ import { generateOrderId } from "../../../utils/generateOrderId.js"
 import OrderItem from "../../../models/orderItem.js";
 import Payment from "../../../models/payment.js";
 import { razorpay } from "../../../Config/razorpay.js";
+import {validateCoupon} from '../../coupon/service/couponService.js'
 
 
 import {TERMINAL_STATUSES, POLL_INTERVAL_MS,STATUS_SEQUENCE} from "../../../constant/orderStatus.js"
+import Coupon from "../../../models/coupon.js";
+
+import { calculateEta } from "../../../utils/distanceCalc.js";
+import { calculateEtaService2 } from "../../cart/service/cartService.js";
+import CouponRedemption from "../../../models/couponRedemption.js";
+import { where } from "sequelize";
 // import {fetchFullOrder} from "../../payment/Service/paymentService.js"
 
 // export const placeOrderService = async(userId,{addressId=null,specialInstr,idempotencyKey})=>{
@@ -186,12 +193,14 @@ import {TERMINAL_STATUSES, POLL_INTERVAL_MS,STATUS_SEQUENCE} from "../../../cons
 //   })
     
 // }
-export const payandplaceOrderService = async(userId,{addressId=null,specialInstr,idempotencyKey,paymentMethod})=>{
+export const payandplaceOrderService = async(userId,{addressId=null,idempotencyKey,paymentMethod,specialInstructions})=>{
     
   if (!['COD', 'RAZORPAY'].includes(paymentMethod)) {
     throw BadRequestError("paymentMethod must be 'COD' or 'RAZORPAY'")
   }
-  console.log(paymentMethod,idempotencyKey)
+  console.log(paymentMethod,idempotencyKey,specialInstructions)
+
+
 
   if(!addressId) throw BadRequestError("Address is required.")
   if(!idempotencyKey) throw BadRequestError("idempotencyKey is required for payment orders.")
@@ -263,7 +272,6 @@ const unavailable = cart.items.filter(
     )
   }
 
-//   AGAIN NEED TO CALCULATE TOTALS
 
 
 // ── 4. Calculate totals ───────────────────────────────────────
@@ -288,32 +296,71 @@ const unavailable = cart.items.filter(
   })
 
 // ── 4. Calculate totals ───────────────────────────────────────
-  const recal = calculateCartTotals(cart.items)
+
+
+const {distanceKm,etaMinutes} = await calculateEtaService2(address.kitchenId,address)
+
+  const recal = calculateCartTotals(cart.items,distanceKm)
   const subtotal=recal.subtotal;
-  const totalAmt = recal.totalAmount;
-  const deliveryAmt = recal.deliveryFee;
+  // const deliveryAmt = recal.deliveryFee;
+  const baseDeliveryFee = recal.deliveryFee;
   const savingsAmt = recal.totalSavings;
+  console.log("Recalculated totals:", recal)
+ 
+  // COUPON CODE VALIDATION
+  let couponId=null
+  let couponCode=null
+  let couponDiscountAmount=0
+  let validatedCoupon = null
+
+  if(cart.appliedCouponId){
+    const coupon = await Coupon.findByPk(cart.appliedCouponId)
+  
+
+  if(!coupon){
+    throw BadRequestError("Applied coupon is no longer available.")
+  }
+
+  const result = await validateCoupon(coupon.code,userId,  { subtotal, deliveryFee: baseDeliveryFee },address.kitchenId)
+
+  console.log("result",result)
+  if(!result.valid){
+    throw BadRequestError(result.message || `Coupon code ${coupon.code} is no longer valid.`)
+  }
+
+  validatedCoupon = result.coupon
+  couponId = result.coupon.id
+  couponCode = result.coupon.code
+  couponDiscountAmount = result.discountAmount
+  
+}
+
+
+// const effectiveDeliveryFee = validatedCoupon?.discountType === 'FREE_DELIVERY' ? 0 : baseDeliveryFee
+const effectiveDeliveryFee = baseDeliveryFee
+const totalAmt = subtotal + effectiveDeliveryFee - couponDiscountAmount
+
+console.log(subtotal,totalAmt)
+
 
   if(paymentMethod === 'COD'){
 // PLACE THE ORDER for cod
 const order = await sequelize.transaction(async(t)=>{
     // GENERATE ORDERID AFTER ALL CHECKS
     const orderNum= await generateOrderId(userId);
-    console.log(orderNum)
-  
-
-    const newOrder = await Order.create({
+        const newOrder = await Order.create({
         userId,
         addressId,
         orderNumber:orderNum,
         status:      'CONFIRMED', // COD → confirmed immediately
         subtotal:    parseFloat(subtotal.toFixed(2)),
-
-        deliveryAmt,
+        baseDeliveryFee,
         savingsAmt,
         totalAmt,
-        // couponCode:  couponCode || null,
-        specialInstr: specialInstr || null,
+        couponCode,
+        couponId,
+        couponDiscountAmount,
+        specialInstr: specialInstructions || null,
         idempotencyKey: idempotencyKey || null,
         confirmedAt: new Date(),
     },
@@ -338,6 +385,17 @@ await Payment.create(
     },
     { transaction: t }
 )
+if(couponId){
+  await CouponRedemption.create({
+    couponId,
+    userId,
+    orderId:newOrder.id,
+    discountAmount:parseFloat(couponDiscountAmount.toFixed(2)),
+    status:'ACTIVE',
+  },
+  {transaction:t})
+  await Cart.update({appliedCouponId:null},{where:{userId},transaction:t})
+}
 
     await CartItem.destroy({
       where:       { cartId: cart.id },
@@ -390,20 +448,19 @@ const rzpOrder = await razorpay.orders.create({
 const order = await sequelize.transaction(async(t)=>{
     // GENERATE ORDERID AFTER ALL CHECKS
     const orderNum= await generateOrderId(userId);
-   
-  
-
-    const newOrder = await Order.create({
+       const newOrder = await Order.create({
         userId,
         addressId,
         orderNumber:orderNum,
         status:      'PENDING', // COD → confirmed immediately
         subtotal:    parseFloat(subtotal.toFixed(2)),
-        deliveryAmt,
+        baseDeliveryFee,
         savingsAmt,
         totalAmt,
-        // couponCode:  couponCode || null,
-        specialInstr: specialInstr || null,
+        couponCode,
+        couponId,
+        couponDiscountAmount,
+        specialInstr: specialInstructions || null,
         idempotencyKey: idempotencyKey || null,
         confirmedAt: new Date(),
     },
@@ -415,9 +472,6 @@ await OrderItem.bulkCreate(
     orderItems.map((item) => ({ ...item, orderId: newOrder.id })),
     { transaction: t }
 )
-
-
-
 
 // Create payment record (RAZORPAY)
 await Payment.create(
@@ -559,6 +613,51 @@ export const getOrderDetailsService = async(userId,{orderId})=>{
         return order;
 }
 
+
+
+// CANCEL ORDER SERVICE
+// export const cancelOrderService = async (userId, orderId, reason) => {
+
+//   const order = await Order.findOne({
+//     where: { id: orderId, userId },
+//     include: [{ model: Payment, as: 'payment' }],
+//   })
+
+//   if (!order) throw NotFoundError('Order')
+
+//   if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
+//     throw BadRequestError(`Order cannot be cancelled once it is ${order.status.toLowerCase()}.`)
+//   }
+
+//   await sequelize.transaction(async (t) => {
+//     await Order.update(
+//       {
+//         status: 'CANCELLED',
+//         cancelledAt: new Date(),
+//         cancellationReason: reason || null,
+//       },
+//       { where: { id: orderId }, transaction: t }
+//     )
+
+//     // payment record stays as-is for now (no auto-refund) — just note it needs manual handling if PAID
+//     if (order.payment?.status === 'PAID') {
+//       await Payment.update(
+//         { status: 'REFUND_PENDING' },
+//         { where: { orderId }, transaction: t }
+//       )
+//     }
+
+//     // ── VOID COUPON REDEMPTION — frees up usage count ──
+//     if (order.couponId) {
+//       await CouponRedemption.update(
+//         { status: 'VOIDED' },
+//         { where: { orderId, status: 'ACTIVE' }, transaction: t }
+//       )
+//     }
+//   })
+
+//   return fetchFullOrder(orderId)
+// }
 
 export const verifyOrderOwnership = async (orderId, userId) => {
   const order = await Order.findOne({ where: { id: orderId, userId } })

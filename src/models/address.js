@@ -94,7 +94,8 @@ const Address = sequelize.define(
         key:   'id',
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL', // if kitchen is deleted, don't lose the address
+      onDelete: 'SET NULL', 
+      // if kitchen is deleted, don't lose the address
     },
   },
   {
