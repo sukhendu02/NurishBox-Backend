@@ -1,12 +1,15 @@
 
-import {getallItemsService } from "../service/productService.js"
+import {getallItemsService,getSuggestedItemsService } from "../service/productService.js"
 import Address from "../../../models/address.js";
+import { getCartItemsbyUserOrSession } from "../../cart/service/cartService.js";
+import {getIdentity} from "../../cart/controller/cartController.js"
 export const getAllItems = async(req,res)=>{
     let kitchenId = null;
     let latitude = req.query.lat || null;
     let longitude = req.query.lng || null
     
-    
+
+       
 
    if (req.user?.id) {
       // Read selected addressId from header — sent by frontend top bar
@@ -34,6 +37,7 @@ export const getAllItems = async(req,res)=>{
 
     }
 
+
  
 
     const response = await getallItemsService(req.query,{kitchenId,latitude,longitude});
@@ -43,3 +47,36 @@ export const getAllItems = async(req,res)=>{
         ...response,
       });
 }
+
+
+export const getSuggestedItems = async(req,res)=>{
+   let kitchenId = null
+
+  if (req.user?.id) {
+    const userId = req.user.id;
+    const addressId = req.headers['x-address-id'] || null
+    const address = addressId
+      ? await Address.findOne({
+          where: { id: addressId, userId: req.user.id },
+          attributes: ['kitchenId'],
+        })
+      : await Address.findOne({
+          where: { userId: req.user.id, isDefault: true },
+          attributes: ['kitchenId'],
+        })
+
+    if (address) {
+      kitchenId = address.kitchenId || null
+    }
+  }
+
+
+ 
+  const cartItems =  await getCartItemsbyUserOrSession(getIdentity(req))
+  const suggestedItems = await getSuggestedItemsService(kitchenId,cartItems.items);
+console.log(suggestedItems)
+  res.status(200).json({
+    success: true, 
+    suggestedItems
+  }
+)}

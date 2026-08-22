@@ -393,3 +393,23 @@ export const calculateEtaService2 = async(kitchenId,selectedAddress)=>{
 
   
 }
+
+// GET CART ITEMS ONLY USING USER ID OR SESSION ID 
+export const getCartItemsbyUserOrSession = async({userId,sessionId})=>{
+  const where = userId ? {userId}:{sessionId};
+  const cart = await Cart.findOne({
+    where,
+    include:[{
+      model:CartItem,
+      as:"items",
+      include:[{
+        model:Product,
+        as:"product",
+        attributes:["id","name","category","imageUrl","basePrice","discountPrice","isAvailable"]
+      }]
+    }]
+  })
+
+
+  return cart
+}

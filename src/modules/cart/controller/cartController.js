@@ -2,7 +2,7 @@ import { BadRequestError } from "../../../middleware/ErrorHandler.js";
 import { calculateEta } from "../../../utils/distanceCalc.js";
 import { getCartService,getCartService2,addToCartService, updateCartItemsService, removeItemfromCart, clearCartService, checkItemAvailabilityService,calculateEtaService } from "../service/cartService.js";
 import Address from "../../../models/address.js"
-const getIdentity = (req) => ({
+export const getIdentity = (req) => ({
   userId:    req.user?.id || null,
   sessionId: req.user ? null : req.sessionId,
 });

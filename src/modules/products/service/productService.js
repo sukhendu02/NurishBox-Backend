@@ -225,3 +225,64 @@ async function resolveKitchen(kitchenId, latitude, longitude) {
  
   return { kitchen: result.kitchen, status: 'open', message: null }
 }
+
+
+// SUGGESTED ITEMS SERVICE
+export const getSuggestedItemsService = async(kitchenId, cartItems)=>{
+    const SUGGESTION_LIMIT = 6
+      if (!kitchenId) return []
+
+console.log(cartItems)
+const cartProductIds = cartItems.map(item => item.product?.id).filter(Boolean)
+const cartCategories = [...new Set(
+  cartItems.map(item => item.product?.category).filter(Boolean)
+)]
+
+const inventoryRows = await KitchenInventory.findAll({
+  where: { kitchenId, isAvailable: true, quantity: { [Op.gt]: 0 } },
+  attributes: ['productId'],
+})
+
+   const availableProductIds = inventoryRows.map(r => r.productId)
+
+      if (availableProductIds.length === 0) return []
+
+      const excludeIds = [...cartProductIds]
+
+
+// Step 1 — same category, available at this kitchen, not in cart
+let candidates = await Product.findAll({
+    where: {
+      id: {
+        [Op.in]: availableProductIds,
+        [Op.notIn]: excludeIds.length ? excludeIds : [null],
+      },
+      discontinued: false,
+      ...(cartCategories.length ? { category: { [Op.in]: cartCategories } } : {}),
+    },
+    order: [['totalOrders', 'DESC']],
+    limit: SUGGESTION_LIMIT,
+  })
+  
+  
+  // Step 2 — backfill with kitchen-wide bestsellers if not enough in-category matches
+  if (candidates.length < SUGGESTION_LIMIT) {
+    const excludeMore = [...excludeIds, ...candidates.map(c => c.id)]
+    const backfill = await Product.findAll({
+      where: {
+        id: {
+          [Op.in]: availableProductIds,
+          [Op.notIn]: excludeMore.length ? excludeMore : [null],
+        },
+        discontinued: false,
+      },
+      order: [['totalOrders', 'DESC']],
+      limit: SUGGESTION_LIMIT - candidates.length,
+    })
+    candidates = [...candidates, ...backfill]
+  }
+
+
+  return candidates
+  
+}
