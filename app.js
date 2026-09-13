@@ -27,7 +27,7 @@ const app = express();
 
 // Enable CORS
 app.use(cors({
-    origin: ["http://localhost:5173", process.env.FRONTEND_URL], // ← your Vite frontend exact URL
+    origin: ["http://localhost:5173", process.env.FRONTEND_URL,process.env.KITCHEN_FRONTEND_URL], // ← your Vite frontend exact URL
     credentials: true,                // ← required because frontend uses withCredentials: true
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization","x-idempotency-key","x-address-id"],
