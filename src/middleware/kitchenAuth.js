@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
-import KitchenUser from "../models/KitchenUser.js"
+import Kitchen from '../models/kitchen.js'
+import KitchenUser from '../models/kitchenUser.js'
 import { BadRequestError, ForbiddenError, UnauthorizedError } from './ErrorHandler.js'
 
 
