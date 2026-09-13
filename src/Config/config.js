@@ -16,7 +16,7 @@ const base = {
 export default {
   development: {
     ...base,
-    logging: console.log,
+    // logging: console.log,
   },
   test: {
     ...base,

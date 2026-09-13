@@ -16,6 +16,11 @@ const Kitchen = sequelize.define(
       type:      DataTypes.STRING,
       allowNull: false,
     },
+    kitchenCode: {
+      type:      DataTypes.STRING,
+      // allowNull: false,
+      unique:true
+    },
     contactPhone: {
       type:      DataTypes.STRING,
       allowNull: true,
@@ -103,6 +108,7 @@ const Kitchen = sequelize.define(
       { fields: ['is_active'] },
       { fields: ['accepting_orders'] },
       { fields: ['city'] },
+      { fields: ['kitchen_code'],unique:true },
     ],
   }
 )

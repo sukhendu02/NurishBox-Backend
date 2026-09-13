@@ -13,6 +13,13 @@ import { sessionMiddleware } from "./src/middleware/sessionMiddleware.js";
 import cookieParser from "cookie-parser";
 import webhookRoute from "./src/modules/payment/Route/webhookRoute.js"
 
+
+// KITCHEN IMPORTS 
+import kitchenAuth from "./src/kitchenModule/kitchenAuth/routes/auth.route.js"
+import kitchenCatalog from "./src/kitchenModule/kitchenCatalog/route/catalog.route.js"
+import kitchenOrder from "./src/kitchenModule/kitchenOrders/route/order.route.js"
+import kitchenSettings from "./src/kitchenModule/kitchenSettings/route/setting.route.js"
+import kitchenReports from "./src/kitchenModule/kitchenReport/route/report.route.js"
 const app = express();
 
 
@@ -38,7 +45,7 @@ app.use(sessionMiddleware);
 
 
 
-// ROUTES
+// USER ROUTES
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/cart", cartRoute);
 app.use("/api/v1/menu",productRoute)
@@ -46,6 +53,21 @@ app.use("/api/v1/user",userRoute)
 app.use("/api/v1/order",orderRoute)
 app.use("/api/v1/payment",paymentRoute)
 app.use("/api/v1/coupon",couponRoute)
+
+
+
+// KITCHEN ROUTES
+
+app.use("/api/v1/kitchen/auth", kitchenAuth);
+
+app.use("/api/v1/kitchen/product",kitchenCatalog);
+
+app.use("/api/v1/kitchen/orders",kitchenOrder);
+
+app.use("/api/v1/kitchen/settings",kitchenSettings);
+
+app.use("/api/v1/kitchen/reports",kitchenReports);
+
 
 // Health check
 app.get("/health", (req, res) => {

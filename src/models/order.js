@@ -35,7 +35,8 @@ const Order = sequelize.define(
         'PENDING',           // created, awaiting payment
         'PLACED',            // order placed
         'CONFIRMED',         // payment done OR COD accepted
-        'PREPARING',         // kitchen started
+        'PREPARING', 
+        'PREPARED',        // kitchen started
         'OUT_FOR_DELIVERY',  // with delivery partner
         'DELIVERED',         // successfully delivered
         'CANCELLED',         // cancelled by user / admin / system
@@ -43,6 +44,15 @@ const Order = sequelize.define(
       ),
       defaultValue: 'PENDING',
       allowNull:    false,
+    },
+
+    kitchenId: {
+      type:      DataTypes.UUID,
+      // allowNull: false,   // see migration note below
+      references: {
+        model: 'kitchens',
+        key:   'id',
+      },
     },
 
     // ── Pricing breakdown ─────────────────────────────────────────
@@ -104,6 +114,10 @@ couponDiscountAmount: {
       type:      DataTypes.DATE,
       allowNull: true,
     },
+    preparedAt: {
+      type:      DataTypes.DATE,
+      allowNull: true,
+    },
     outForDeliveryAt: {
       type:      DataTypes.DATE,
       allowNull: true,
@@ -123,11 +137,9 @@ couponDiscountAmount: {
       allowNull: true,
     },
     cancelledBy: {
-      type:      DataTypes.ENUM('USER', 'ADMIN', 'SYSTEM'),
+      type:      DataTypes.ENUM('USER', 'ADMIN', 'SYSTEM','KITCHEN'),
       allowNull: true,
     },
-
-
     idempotencyKey:{
       type:DataTypes.STRING,
       unique:true,
@@ -142,6 +154,7 @@ couponDiscountAmount: {
       { fields: ['status'] },
       { unique: true, fields: ['order_number'] },
       { fields: ['created_at'] },
+      { fields: ['kitchen_id'] },
     ],
   }
 )
@@ -152,6 +165,8 @@ Order.associate = (models) => {
   Order.belongsTo(models.Coupon, { foreignKey: 'couponId', as: 'coupon' })
   Order.hasMany(models.OrderItem, { foreignKey: 'orderId',   as: 'items',  onDelete: 'CASCADE' })
   Order.hasOne(models.Payment,    { foreignKey: 'orderId',   as: 'payment' })
+  Order.belongsTo(models.Kitchen, { foreignKey: 'kitchenId', as: 'kitchen' })
+ 
 }
 
 export default Order

@@ -31,7 +31,7 @@ const Product = sequelize.define("Product", {
   // CHECK ENOM OR STRING
   category: {
     type:      DataTypes.ENUM(
-      "BREAKFAST", "LUNCH", "DINNER",
+      // "BREAKFAST", "LUNCH", "DINNER",
   "BOWLS",
   'SALADS',
   'BURGERS',
