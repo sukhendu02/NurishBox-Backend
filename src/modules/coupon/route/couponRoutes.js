@@ -7,5 +7,5 @@ import { applyCoupon,removeCoupon,getAvailableCoupons } from "../controller/coup
 router.post('/',authenticate,applyCoupon);
 router.post('/remove',authenticate,removeCoupon);
 
-router.get('/available',authenticate,getAvailableCoupons);
+router.get('/available',getAvailableCoupons);
 export default router;

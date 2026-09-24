@@ -37,12 +37,16 @@ export const User = sequelize.define(
     },
 
    dietary_pref: {
-  type: DataTypes.ENUM("veg", "non_veg", "vegan"),
+  type: DataTypes.ENUM("veg", "non_veg", "vegan","no_pref"),
   allowNull: true,
 },
 
     fitness_goal: {
-      type: DataTypes.ENUM("weight_loss", "muscle_gain", "maintenance", "general_health"),
+      type: DataTypes.ENUM("weight_loss", "muscle_gain", "maintenance", "clean_eating","high_protein"),
+      allowNull: true,
+    },
+    dob: {
+      type: DataTypes.DATEONLY,
       allowNull: true,
     },
 

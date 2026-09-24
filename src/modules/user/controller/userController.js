@@ -16,9 +16,9 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async(req,res)=>{
     
     const userId = req.user.id;
-    const {name,email} = req.body;
-    console.log("Received update request for userId:", userId, "with data:", { name, email });
-    const updatedProfile = await updateUserProfileService(userId,{name,email});
+    const {name,email,dob,dietary_pref,fitness_goal} = req.body;
+    console.log("Received update request for userId:", userId, "with data:", { name, email,dietary_pref,fitness_goal,dob });
+    const updatedProfile = await updateUserProfileService(userId,{name,email,dietary_pref,fitness_goal,dob });
     res.status(200).json({
         success: true,
         data: updatedProfile,

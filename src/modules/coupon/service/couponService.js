@@ -218,71 +218,113 @@ export const applyCouponToCartSummary = async(userId, appliedCouponId, cartSumma
 
 // GET ALL AVAILABLE COUOPONS
 
-export const getAvailableCouponsService = async(userId)=>{
-  const now= new Date()
-  const coupons = await Coupon.findAll({
-    where:{
-      isActive:true,
-      ishidden:{[Op.ne]: true,},
+// export const getAvailableCouponsService = async(userId)=>{
+//   const now= new Date()
+//   const coupons = await Coupon.findAll({
+//     where:{
+//       isActive:true,
+//       ishidden:{[Op.ne]: true,},
 
-       scope: {
-        [Op.ne]: "PROMOTER",
-        [Op.ne]: "KITCHEN",
-      },
+//        scope: {
+//         [Op.ne]: "PROMOTER",
+//         [Op.ne]: "KITCHEN",
+//       },
 
-      [Op.and]:[
-        // check start date 
-        {
-          [Op.or]:[
-            {startAt:null},
-            {startAt:{[Op.lte]:now}}
-          ]
-        },
-        // Coupon has not expired
-        {
-          [Op.or]: [
-            { endAt: null },
-            { endAt: { [Op.gte]: now } },
-          ],
-        },
+//       [Op.and]:[
+//         // check start date 
+//         {
+//           [Op.or]:[
+//             {startAt:null},
+//             {startAt:{[Op.lte]:now}}
+//           ]
+//         },
+//         // Coupon has not expired
+//         {
+//           [Op.or]: [
+//             { endAt: null },
+//             { endAt: { [Op.gte]: now } },
+//           ],
+//         },
 
-           {
-          [Op.or]: [
-            // User-specific coupon
-            {userId},
+//            {
+//           [Op.or]: [
+//             // User-specific coupon
+//             {userId},
 
-            // Public coupon
-            {
-              userId: null,
-              scope: "GLOBAL",
-            },
-          ],
-        },
-      ]
-    },
-      attributes: [
-      "id",
-      "code",
-      "description",
-      "scope",
-      "userId",
-      "discountType",
-      "discountValue",
-      "maxDiscountAmount",
-      "minOrderValue",
-      "firstOrderOnly",
-      "startAt",
-      "endAt",
-    ],
-    order: [["createdAt", "DESC"]],
-    raw:true
+//             // Public coupon
+//             {
+//               userId: null,
+//               scope: "GLOBAL",
+//             },
+//           ],
+//         },
+//       ]
+//     },
+//       attributes: [
+//       "id",
+//       "code",
+//       "description",
+//       "scope",
+//       "userId",
+//       "discountType",
+//       "discountValue",
+//       "maxDiscountAmount",
+//       "minOrderValue",
+//       "firstOrderOnly",
+//       "startAt",
+//       "endAt",
+//     ],
+//     order: [["createdAt", "DESC"]],
+//     raw:true
     
-  })
+//   })
 
-  console.log("Available Coupons:", coupons)
+//   console.log("Available Coupons:", coupons)
 
-  return{
-    userCoupon : coupons.filter(coupon=> coupon.userId ===userId),
-    availableCoupon : coupons.filter(coupon=>coupon.userId===null)
-  }
-}
+//   return{
+//     userCoupon : coupons.filter(coupon=> coupon.userId ===userId),
+//     availableCoupon : coupons.filter(coupon=>coupon.userId===null)
+//   }
+// }
+export const getAvailableCouponsService = async (userId = null) => {
+  const now = new Date();
+
+  // Guests only ever see public coupons
+  const ownershipCondition = userId
+    ? { [Op.or]: [{ userId }, { userId: null, scope: "GLOBAL" }] }
+    : { userId: null, scope: "GLOBAL" };
+
+  const coupons = await Coupon.findAll({
+    where: {
+      isActive: true,
+      ishidden: { [Op.ne]: true },
+      scope: { [Op.notIn]: ["PROMOTER", "KITCHEN"] },
+      [Op.and]: [
+        { [Op.or]: [{ startAt: null }, { startAt: { [Op.lte]: now } }] },
+        { [Op.or]: [{ endAt: null }, { endAt: { [Op.gte]: now } }] },
+        ownershipCondition,
+      ],
+    },
+    attributes: [
+            "id",
+            "code",
+            "description",
+            "scope",
+            "userId",
+            "discountType",
+            "discountValue",
+            "maxDiscountAmount",
+            "minOrderValue",
+            "firstOrderOnly",
+            "startAt",
+            "endAt",
+          ],
+    order: [["createdAt", "DESC"]],
+    raw: true,
+  });
+
+  return {
+    userCoupon: userId ? coupons.filter(c => c.userId === userId) : [],
+    availableCoupon: coupons.filter(c => c.userId === null),
+  };
+};

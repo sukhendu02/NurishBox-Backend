@@ -59,7 +59,7 @@ export async function connectDB() {
     // alter: true  → dev (updates columns to match model)
     // alter: false → production (use migrations instead)
     const alter = env === "development";
-     await sequelize.sync({ alter :true});
+    //  await sequelize.sync({ alter :true});
     console.log(`✅ Tables synced (alter: ${alter})`);
 
   } catch (err) {

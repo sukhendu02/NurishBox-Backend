@@ -32,7 +32,7 @@ export const removeCoupon = async(req,res)=>{
 
 
 export const getAvailableCoupons = async(req,res)=>{
-    const userId = req.user.id
+    const userId = req.user?.id ?? null
     const data = await getAvailableCouponsService(userId);
     console.log(data)
     res.status(200).json({

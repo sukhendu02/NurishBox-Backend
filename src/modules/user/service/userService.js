@@ -8,7 +8,7 @@ import Order from "../../../models/order.js"
 import OrderItem from "../../../models/orderItem.js"
 import Payment from "../../../models/payment.js"
 import {assignKitchentoAddress} from "../../../utils/kitchen/assignKitchen.js"
-
+const MAX_AGE = 13; 
 export const getUserProfileServcie = async(userId)=>{
     const userProfile  = await User.findByPk(userId,
         {
@@ -18,6 +18,10 @@ export const getUserProfileServcie = async(userId)=>{
                 'email',
                 'phone',
                 'createdAt',
+                'isEmailVerified',
+                'dietary_pref',
+                'fitness_goal',
+                'dob'
             ]
         }
     )
@@ -27,8 +31,8 @@ export const getUserProfileServcie = async(userId)=>{
         return userProfile;
 }
 
-export const updateUserProfileService = async (userId,{name,email})=>{
-  console.log("Updating user profile for userId:", userId, "with data:", { name, email }); 
+export const updateUserProfileService = async (userId,{name,email,dietary_pref, fitness_goal, dob})=>{
+  console.log("Updating user profile for userId:", userId, "with data:", { name, email,dietary_pref, fitness_goal,dob}); 
   if(!name && !email){
         throw BadRequestError("Provide at least one field to update");
     }
@@ -52,19 +56,56 @@ export const updateUserProfileService = async (userId,{name,email})=>{
     }
   }
 
+  if(dob && !isAtLeastYearsOld){
+      throw BadRequestError(`You should at least ${MAX_AGE} year old.`)
+  }
+
   const updateUser = await User.findByPk(userId);
   if(!updateUser) throw NotFoundError("User")
 
     await updateUser.update({
            ...(name  && { name:  name.trim() }),
     ...(email && { email: email.trim().toLowerCase() }),
+    ...(dietary_pref  && { dietary_pref:  dietary_pref.trim() }),
+    ...(fitness_goal  && { fitness_goal:  fitness_goal.trim() }),
+    ...(dob  && { dob:  dob.trim() }),
     })
     return {
         id:updateUser.id,
         name:updateUser.name,
         email:updateUser.email,
+        dietry_pref:updateUser.dietry_pref,
+        fitness_goal:updateUser.fitness_goal,
+        dob:updateUser.dob,
+        
     }
 }
+
+
+//DOB CHECK
+
+
+export const isAtLeastYearsOld = (dob) => {
+  if (!dob) return false;
+
+  const birthDate = new Date(dob);
+  const today = new Date();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const hasBirthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (
+      today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate()
+    );
+
+  if (!hasBirthdayPassed) {
+    age--;
+  }
+
+  return age >= MAX_AGE;
+};
 
 // ADD NEW ADDRESSS
 export const createUserAddressService = async (userId, addressData) => {
