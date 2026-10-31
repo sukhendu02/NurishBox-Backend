@@ -1,0 +1,24 @@
+-- 1. Driver (already ACTIVE, so you can test orders right away)
+INSERT INTO drivers (name, mobile, status, is_online, vehicle_type, vehicle_number, session_version, verified_at)
+VALUES ('Test Driver', '9000000001', 'ACTIVE', false, 'BIKE', 'MP09AB1234', 0, NOW());
+
+-- 2. Map the driver to a kitchen (replace with your kitchen id, or use the first active one)
+INSERT INTO driver_kitchens (driver_id, kitchen_id, is_active)
+SELECT d.id, k.id, true
+FROM drivers d
+CROSS JOIN (SELECT id FROM kitchens WHERE is_active = true ORDER BY created_at LIMIT 1) k
+WHERE d.mobile = '9000000001';
+
+-- 3. Documents, all VERIFIED
+INSERT INTO driver_documents (driver_id, doc_type, doc_number, file_url, expiry_date, status, verified_at)
+SELECT d.id, t.doc_type, t.doc_number, 'https://example.com/test/' || lower(t.doc_type) || '.jpg', t.expiry_date::date, 'VERIFIED', NOW()
+FROM drivers d
+CROSS JOIN (VALUES
+  ('LICENSE',    'MP0920250001', '2030-12-31'),
+  ('RC',         'MP09AB1234',   '2030-12-31'),
+  ('PAN',        'ABCDE1234F',   NULL),
+  ('AADHAAR',    'XXXXXXXX1234', NULL),
+  ('PHOTO',      NULL,           NULL),
+  ('LIVE_PHOTO', NULL,           NULL)
+) AS t(doc_type, doc_number, expiry_date)
+WHERE d.mobile = '9000000001';

@@ -20,6 +20,13 @@ import kitchenCatalog from "./src/kitchenModule/kitchenCatalog/route/catalog.rou
 import kitchenOrder from "./src/kitchenModule/kitchenOrders/route/order.route.js"
 import kitchenSettings from "./src/kitchenModule/kitchenSettings/route/setting.route.js"
 import kitchenReports from "./src/kitchenModule/kitchenReport/route/report.route.js"
+
+
+// DRIVER IMPORTS
+import driverAuth from "./src/driverModule/auth/route/driverauth.route.js"
+import driverOrder from './src/driverModule/order/route/driverOrder.route.js'
+
+
 const app = express();
 
 
@@ -27,7 +34,7 @@ const app = express();
 
 // Enable CORS
 app.use(cors({
-    origin: ["http://localhost:5173", process.env.FRONTEND_URL,process.env.KITCHEN_FRONTEND_URL], // ← your Vite frontend exact URL
+    origin: ["http://localhost:5173","http://localhost:5174","http://localhost:8081", process.env.FRONTEND_URL,process.env.KITCHEN_FRONTEND_URL], // ← your Vite frontend exact URL
     credentials: true,                // ← required because frontend uses withCredentials: true
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization","x-idempotency-key","x-address-id"],
@@ -67,6 +74,13 @@ app.use("/api/v1/kitchen/orders",kitchenOrder);
 app.use("/api/v1/kitchen/settings",kitchenSettings);
 
 app.use("/api/v1/kitchen/reports",kitchenReports);
+
+
+
+// DRIVER ROUTES
+app.use("/api/v1/driver/auth", driverAuth);
+
+app.use("/api/v1/driver/order", driverOrder);
 
 
 // Health check
