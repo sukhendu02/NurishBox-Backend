@@ -41,6 +41,9 @@ const Driver = sequelize.define(
           allowNull: false,
            defaultValue: 0
          },
+
+rating_sum:   { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+rating_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     lastLat: DataTypes.DECIMAL(10, 7),
     lastLng: DataTypes.DECIMAL(10, 7),
     lastSeenAt: DataTypes.DATE,
@@ -48,6 +51,8 @@ const Driver = sequelize.define(
     verifiedAt: DataTypes.DATE,
     createdBy: DataTypes.UUID,
   },
+
+  
   {
     tableName: 'drivers',
     timestamps: true,

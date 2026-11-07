@@ -126,6 +126,8 @@ const Product = sequelize.define("Product", {
     type:         DataTypes.INTEGER,
     defaultValue: 0,
   },
+  rating_sum:   { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+rating_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
 }, {
   tableName:   "products",
   timestamps:  true,

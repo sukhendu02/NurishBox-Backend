@@ -5,7 +5,7 @@ const router = Router();
 
 import { authenticate } from "../../../middleware/authenticate.js";
 import { getUserProfile,updateUserProfile,createUserAddress,getUserAllAddresses,getSingleAddress,updateUserAddress,deleteUserAddress,setDefaultAddress,
-    getmyOrders,
+    getmyOrders, submitReview
 } from "../controller/userController.js";
 
 // PROFILE DETAILS 
@@ -27,4 +27,9 @@ router.patch('/me/addresses/:addressId/default',authenticate,  setDefaultAddress
 // USER ORDERS
 router.get("/my-orders",authenticate,getmyOrders)
 
+router.get("/my-orders/:orderId",authenticate,getmyOrders)
+
+
+// SUBMIT REVIEW 
+router.post("/my-orders/submit-review",authenticate,submitReview)
 export default router;

@@ -1,4 +1,5 @@
 
+import { BadRequestError } from "../../../middleware/ErrorHandler.js";
 import { getUserProfileServcie, updateUserProfileService,createUserAddressService,getUserAllAddressesService,getSingleAddressService,updateUserAddressService,
     deleteUserAddressService,setDefaultAddressService,
 getmyOrderService} from "../service/userService.js";
@@ -96,6 +97,24 @@ export const getmyOrders = async (req,res)=>{
         data:allOrders.rows,
         pagination:allOrders.pagination,
         total:allOrders.total
+    })
+}
+
+
+// SUBMIT REVIEW
+export const  submitReview = async(req,res)=>{
+    const { orderId } = req.params;
+    const userId = req.user.id;
+    const { items = [], driver } = req.body;
+
+    if(!orderId || !userId ){
+        throw BadRequestError("Missing required fields")
+    }
+
+    const result = await submitReviewService(orderId, userId, items,driver);
+    res.status(200).json({
+        success:true,
+        ...result
     })
 }
 

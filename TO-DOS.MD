@@ -13,3 +13,7 @@
 
 
 -- Coupon code: Product level coupon code
+
+-- update the productDetailPopup ui
+-- order placement loading and success screen
+-- Order tracking
